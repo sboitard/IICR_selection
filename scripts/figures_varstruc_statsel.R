@@ -303,6 +303,6 @@ for (i in 1:length(v_t)){
 }
 res=left_join(res,res2)
 res$t=res$t*2*N
-p=ggplot(res,aes(x=t,y=IICR))+geom_line(color='red')+theme_bw()+scale_x_continuous(limits=c(100,100000),trans='log10')+ylim(0,30)+geom_line(aes(x=t,y=neutral),color='black')+xlab('generations')
+p=ggplot(res,aes(x=t,y=IICR))+geom_line(color='red')+theme_bw()+scale_x_continuous(limits=c(100,300000),trans='log10')+ylim(0,40)+geom_line(aes(x=t,y=neutral),color='black')+xlab('generations')
 ggsave('Figure5d.jpg',plot = p, width = 6, height = 4)
 
