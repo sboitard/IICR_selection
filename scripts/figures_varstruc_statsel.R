@@ -1,10 +1,11 @@
 ## IICR with K classes along the genome, each following a symmetrical n-island model whose deme size or migration rate can very over time. 
 ## Used in Figure 5 (or to replicate Figure 4)
-## IICR is computed numerically from Equation (4) in Boitard et al (under review) combined with the Q matrix approach described in Rodriguez et al (2018).
+## IICR is computed numerically from Equation (5) in Boitard et al (2022) combined with the Q matrix approach described in Rodriguez et al (2018).
 
 library(tidyverse)
 library(matlib)
 library(latex2exp)
+library(gridExtra)
 
 # function to compute the Q matrix (or rate matrix) of a symmetrical n-island model
 Qmat=function(M,n,c){
@@ -131,7 +132,7 @@ M.labs=paste("M=",v_M,sep='')
 names(M.labs)=v_M
 # plots in natural scale
 p=ggplot(res,aes(x=t,y=IICR,color=as.factor(a2)))+geom_line()+theme_bw()+theme(legend.position='bottom')+ylim(0,max(res$IICR))+scale_color_discrete(name = TeX("$a_2$")) +facet_grid(~M,labeller=labeller(M =M.labs))+xlim(0,10)+scale_x_log10()
-ggsave('Figure4_verif_log.jpg',plot = p, width = 8, height = 4)
+ggsave('Figure4_verif.pdf',plot = p, width = 8, height = 4)
 
 ## Figure 5a-b - non stationary n-island model of Arredondo et al (2021), K=3 classes
 
@@ -175,8 +176,7 @@ res=left_join(res,res2)
 # rescale t with respect to local deme size
 res$t=res$t*2*N
 # plots in log scale
-p=ggplot(res,aes(x=t,y=IICR,color=as.factor(a1)))+geom_line()+theme_bw()+scale_x_continuous(trans='log10',limits=c(100,300000))+scale_color_discrete(name = TeX("$a_1$"))+ylim(0,40)+geom_line(aes(x=t,y=neutral),color='black')+xlab('generations')
-ggsave('Figure5a.jpg',plot = p, width = 6, height = 4)
+pa=ggplot(res,aes(x=t,y=IICR,color=as.factor(a1)))+geom_line()+theme_bw()+scale_x_continuous(trans='log10',limits=c(100,300000))+scale_color_discrete(name = TeX("$a_1$"))+ylim(0,40)+geom_line(aes(x=t,y=neutral),color='black')+xlab('generations')
 
 # similar plot varying a3 instead of a1
 N=1380
@@ -213,8 +213,7 @@ for (i in 1:length(v_t)){
 }
 res=left_join(res,res2)
 res$t=res$t*2*N
-p=ggplot(res,aes(x=t,y=IICR,color=as.factor(a3)))+geom_line()+theme_bw()+scale_x_continuous(trans='log10',limits=c(100,300000))+scale_color_discrete(name = TeX("$a_3$"))+ylim(0,40)+geom_line(aes(x=t,y=neutral),color='black')+xlab('generations')
-ggsave('Figure5b.jpg',plot = p, width = 6, height = 4)
+pb=ggplot(res,aes(x=t,y=IICR,color=as.factor(a3)))+geom_line()+theme_bw()+scale_x_continuous(trans='log10',limits=c(100,300000))+scale_color_discrete(name = TeX("$a_3$"))+ylim(0,40)+geom_line(aes(x=t,y=neutral),color='black')+xlab('generations')
 
 ## Figure 5c - non stationary n-island model of Arredondo et al (2021), K=25 classes from Gossmann et al
 
@@ -259,11 +258,21 @@ res=left_join(res,res2)
 # rescale t with respect to local deme size
 res$t=res$t*2*N
 # plots in log scale
-p=ggplot(res,aes(x=t,y=IICR))+geom_line(color='red')+theme_bw()+scale_x_continuous(limits=c(100,300000),trans='log10')+ylim(0,40)+geom_line(aes(x=t,y=neutral),color='black')+xlab('generations')
-ggsave('Figure5c.jpg',plot = p, width = 6, height = 4)
-# similar plot, removing large values of lambda (as if regions under balancing selection were filtered out)
+pc=ggplot(res,aes(x=t,y=IICR))+geom_line(color='red')+theme_bw()+scale_x_continuous(limits=c(100,300000),trans='log10')+ylim(0,40)+geom_line(aes(x=t,y=neutral),color='black')+xlab('generations')
 
-# figure 5d - n-island humans + gossmann truncated
+# combines the 3 panels
+gs=list(pa,pb,pc)
+lay=rbind(c(1,1,2,2),c(NA,3,3,NA))
+select_grobs <- function(lay) {
+	id <- unique(c(t(lay))) 
+  	id[!is.na(id)]
+} 
+p=grid.arrange(grobs=gs[select_grobs(lay)], layout_matrix=lay)
+ggsave('Figure5.pdf',plot = p, width = 10, height = 8)
+
+## Figure S7: similar to Figure 5c, removing large values of lambda (as if regions under balancing selection were filtered out)
+
+# figure S7a
 N=1380
 n=11
 tmodif=c(24437,82969,107338,179666)/(2*N)
@@ -303,6 +312,51 @@ for (i in 1:length(v_t)){
 }
 res=left_join(res,res2)
 res$t=res$t*2*N
-p=ggplot(res,aes(x=t,y=IICR))+geom_line(color='red')+theme_bw()+scale_x_continuous(limits=c(100,300000),trans='log10')+ylim(0,40)+geom_line(aes(x=t,y=neutral),color='black')+xlab('generations')
-ggsave('Figure5d.jpg',plot = p, width = 6, height = 4)
+pa=ggplot(res,aes(x=t,y=IICR))+geom_line(color='red')+theme_bw()+scale_x_continuous(limits=c(100,300000),trans='log10')+ylim(0,40)+geom_line(aes(x=t,y=neutral),color='black')+xlab('generations')
+
+# figure S7b
+N=1380
+n=11
+tmodif=c(24437,82969,107338,179666)/(2*N)
+lambda_n=rep(1,5)
+M=c(0.905519,17.7122,2.49889,0.721108,1.09619)
+obs=rlnorm(100000,-(0.682**2)/2,0.682)
+h=hist(obs[which(obs<=5)],nclass=25)
+hres=cbind(h$mid,h$counts/sum(h$counts))
+colnames(hres)=c('lambda','a')
+hres=data.frame(hres)
+# remove high lambdas
+hres=hres%>%filter(lambda<=3)
+hres$a=hres$a/sum(hres$a)
+# again similar as above
+lambda=array(dim=c(5,length(hres$a)),data=0)
+for (j in 1:length(hres$a)){
+	lambda[,j]=lambda_n*hres$lambda[j]/hres$lambda[6]
+}
+v_t=seq(from=0,to=10*n,by=0.1)
+p=length(v_t)
+res=data.frame(matrix(nrow=p,ncol=2))
+colnames(res)=c('t','IICR')
+for (i in 1:length(v_t)){	
+	temp=matrix(nrow=2,ncol=length(hres$a))
+	res$t[i]=v_t[i]
+	for (j in 1:length(hres$a)){
+		temp[,j]=coal.distrib(res$t[i],tmodif,lambda[,j],M,n)
+	}
+	res$IICR[i]=sum(hres$a*temp[1,])/sum(hres$a*temp[2,])
+}
+res2=data.frame(matrix(nrow=length(v_t),ncol=2))
+colnames(res2)=c('t','neutral')
+for (i in 1:length(v_t)){		
+	res2$t[i]=v_t[i]
+	temp=coal.distrib(res2$t[i],tmodif,lambda_n,M,n)
+	res2$neutral[i]=temp[1]/temp[2]
+}
+res=left_join(res,res2)
+res$t=res$t*2*N
+pb=ggplot(res,aes(x=t,y=IICR))+geom_line(color='red')+theme_bw()+scale_x_continuous(limits=c(100,300000),trans='log10')+ylim(0,40)+geom_line(aes(x=t,y=neutral),color='black')+xlab('generations')
+
+# combines plots
+p=grid.arrange(pa,pb,ncol=2)
+ggsave('FigureS7.pdf',plot = p, width = 10, height = 4)
 

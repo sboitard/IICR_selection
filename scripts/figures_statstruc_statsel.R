@@ -1,6 +1,6 @@
 ## IICR with K classes along the genome, each following a symmetrical n-island model with stationary (i.e. constant over time) deme size.
 ## Used in Figure 4
-## IICR is computed analytically from Equations (4-5) in Boitard et al (under review).
+## IICR is computed analytically from Equations (5-6) in Boitard et al (2022).
 
 library(tidyverse)
 library(latex2exp)
@@ -57,17 +57,41 @@ for (i_a2 in 1:length(v_a2)){
 		}
 	}
 }
+
+# add the IICR under panmixia
+IICR.pan.varN <- function (time, lambda.freq, lambda) {
+	R <- sum(lambda.freq*exp(-time/lambda))
+   	f <- sum( (lambda.freq/lambda) * exp(-time/lambda) )
+   	return(R/f)
+}
+
+lambda=n*lambda # meta-population size
+p=length(v_a2)*length(v_t)
+res2=data.frame(matrix(nrow=p,ncol=4))
+colnames(res2)=c('a2','M','t','IICR')
+i=1
+for (i_a2 in 1:length(v_a2)){
+	for (i_t in 1:length(v_t)){
+		res2$a2[i]=v_a2[i_a2]
+		res2$t[i]=v_t[i_t]
+		res2$M[i]=1000
+		a=c(1-res2$a2[i],res2$a2[i]) # proportion of each class
+		res2$IICR[i]=IICR.pan.varN(res2$t[i],a,lambda)
+		i=i+1
+	}
+}
+res=rbind(res,res2)
+
 # rescale t with respect to total meta-population size
 res$t=res$t/n
+res=res%>% filter(t==0 | t>=0.01)
+
 # change panel names
-M.labs=paste("M=",v_M,sep='')
-names(M.labs)=v_M
-# plots in natural scale
-p=ggplot(res,aes(x=t,y=IICR,color=as.factor(a2)))+geom_line()+theme_bw()+theme(legend.position='bottom')+ylim(0,max(res$IICR)) +scale_color_discrete(name = TeX("$a_2$")) +facet_grid(~M,labeller=labeller(M =M.labs))+xlim(0,2)
-ggsave('Figure4.jpg',plot = p, width = 8, height = 4)
+M.labs=c(paste("M=",v_M,sep=''),'panmixia')
+names(M.labs)=c(v_M,1000)
 # plots in log scale
-p=ggplot(res,aes(x=t,y=IICR,color=as.factor(a2)))+geom_line()+theme_bw()+theme(legend.position='bottom')+ylim(0,max(res$IICR)) +scale_color_discrete(name = TeX("$a_2$")) +facet_grid(~M,labeller=labeller(M =M.labs))+xlim(0,10)+scale_x_log10()
-ggsave('Figure4_log.jpg',plot = p, width = 8, height = 4)
+p=ggplot(res,aes(x=t,y=IICR,color=as.factor(a2)))+geom_line()+theme_bw()+theme(legend.position='bottom')+ylim(0,max(res$IICR)) +scale_color_discrete(name = TeX("$a_2$")) +facet_grid(~M,labeller=labeller(M =M.labs))+xlim(0,2)+scale_x_log10()
+ggsave('Figure4.pdf',plot = p, width = 10, height = 4)
 
 
 

@@ -1,9 +1,10 @@
 ## IICR with K classes of Ne along the genome, all panmictic and stationary (i.e. constant over time)
-## Used for Figures 1-3
-## IICR is computed analytically from Equation (2) of Boitard et al (under review)
+## Used for Figures 1-2
+## IICR is computed analytically from Equation (2) of Boitard et al (2022)
 
 library(tidyverse)
 library(latex2exp)
+library(gridExtra)
 
 # generic function to compute the IICR with K classes
 IICR.pan.varN <- function (time, lambda.freq, lambda) {
@@ -33,12 +34,9 @@ for (i_a2 in 1:length(v_a2)){
 		i=i+1
 	}
 }
-# plots in natural scale
-p=ggplot(res,aes(x=t,y=IICR,color=as.factor(a2)))+geom_line()+theme_bw()+ylim(0,lambda[2])+xlim(0,2)+scale_color_discrete(name = TeX("$a_2$"))
-ggsave('Figure1.jpg',plot = p, width = 6, height = 4)
 # plots in log scale
 p=ggplot(res,aes(x=t,y=IICR,color=as.factor(a2)))+geom_line()+theme_bw()+ylim(0,lambda[2])+scale_color_discrete(name = TeX("$a_2$"))+xlim(0,10)+scale_x_log10()
-ggsave('Figure1_log.jpg',plot = p, width = 6, height = 4)
+ggsave('Figure1_log.pdf',plot = p, width = 6, height = 4)
 # similar plot with rescaled values of lambda
 lambda=c(1,10)
 v_t=seq(from=0,to=100,by=0.1)
@@ -57,7 +55,7 @@ for (i_a2 in 1:length(v_a2)){
 	}
 }
 p=ggplot(res,aes(x=t,y=IICR,color=as.factor(a2)))+geom_line()+theme_bw()+ylim(0,lambda[2])+scale_color_discrete(name = TeX("$a_2$"))+xlim(0,100)+scale_x_log10()
-ggsave('Figure1_log_rescaled.jpg',plot = p, width = 6, height = 4)
+ggsave('Figure1_log_rescaled.pdf',plot = p, width = 6, height = 4)
 
 ## Figure 2 - K=3 classes
 lambda=c(0.1,1,3) # relative Ne in each class
@@ -78,11 +76,9 @@ for (i_a1 in 1:length(v_a1)){
 	}
 }
 # plots in natural scale
-p=ggplot(res,aes(x=t,y=IICR,color=as.factor(a1)))+geom_line()+theme_bw()+xlim(0,10)+ylim(0,lambda[3]) +scale_color_discrete(name = TeX("$a_1$"))
-ggsave('Figure2.jpg',plot = p, width = 6, height = 4)
+p1=ggplot(res,aes(x=t,y=IICR,color=as.factor(a1)))+geom_line()+theme_bw()+xlim(0,10)+ylim(0,lambda[3]) +scale_color_discrete(name = TeX("$a_1$"))
 # plots in log scale
-p=ggplot(res,aes(x=t,y=IICR,color=as.factor(a1)))+geom_line()+theme_bw()+xlim(0,10)+ylim(0,lambda[3]) +scale_color_discrete(name = TeX("$a_1$"))+scale_x_log10()
-ggsave('Figure2_xlog.jpg',plot = p, width = 6, height = 4)
+p1_log=ggplot(res,aes(x=t,y=IICR,color=as.factor(a1)))+geom_line()+theme_bw()+xlim(0,10)+ylim(0,lambda[3]) +scale_color_discrete(name = TeX("$a_1$"))+scale_x_log10()
 # similars plot varying a3 instead of a1
 lambda=c(0.1,1,3)
 v_t=seq(from=0,to=10,by=0.01)
@@ -100,10 +96,13 @@ for (i_a3 in 1:length(v_a3)){
 		i=i+1
 	}
 }
-p=ggplot(res,aes(x=t,y=IICR,color=as.factor(a3)))+geom_line()+theme_bw()+xlim(0,10)+ylim(0,lambda[3]) +scale_color_discrete(name = TeX("$a_3$"))
-ggsave('Figure2b.jpg',plot = p, width = 6, height = 4)
-p=ggplot(res,aes(x=t,y=IICR,color=as.factor(a3)))+geom_line()+theme_bw()+xlim(0,10)+ylim(0,lambda[3]) +scale_color_discrete(name = TeX("$a_3$"))+scale_x_log10()
-ggsave('Figure2b_xlog.jpg',plot = p, width = 6, height = 4)
+p2=ggplot(res,aes(x=t,y=IICR,color=as.factor(a3)))+geom_line()+theme_bw()+xlim(0,10)+ylim(0,lambda[3]) +scale_color_discrete(name = TeX("$a_3$"))
+p2_log=ggplot(res,aes(x=t,y=IICR,color=as.factor(a3)))+geom_line()+theme_bw()+xlim(0,10)+ylim(0,lambda[3]) +scale_color_discrete(name = TeX("$a_3$"))+scale_x_log10()
+# combine plots
+p=grid.arrange(p1,p2,ncol=2)
+ggsave('Figure2.pdf',plot = p, width = 10, height = 4)
+p_log=grid.arrange(p1_log,p2_log,ncol=2)
+ggsave('Figure2_log.pdf',plot = p_log, width = 10, height = 4)
 
 ## Figure 3 - K=25 classes defined Elyashiv et al results
 
@@ -116,9 +115,9 @@ u4=read.table('melanogaster_maps/LSmap_BS1234_SW123_a5_3R.LS',comment.char="",sk
 u=rbind(u1,u2,u3,u4)
 # scales to get a mean value of 1
 u[,2]=u[,2]/mean(u[,2])
-# plots the density
-p=ggplot(u,aes(x=V2))+geom_line(stat="density")+theme_bw()+xlab(TeX("$\\lambda$"))+ylim(0,1)+xlim(0,5)
-ggsave('Figure3_distrib_elyashiv.jpg',plot = p, width = 4, height = 4)
+u = u %>% mutate(curve='Ne distribution') #%>% mutate(scenario='Elyashiv et al (2016), Drosophila')
+# plots the densitystrip.text.y = element_text(size=12)
+p1=ggplot(u,aes(x=V2))+geom_line(stat="density")+theme_bw()+xlab(TeX("$\\lambda$"))+ylim(0,1)+xlim(0,5)+facet_grid(~curve)+theme(strip.text.x = element_text(size=12))
 # breaks into 25 classes of lambda
 h=hist(u[,2],breaks=25)
 hres=cbind(h$mid,h$counts/sum(h$counts))
@@ -133,24 +132,18 @@ for (i in 1:length(v_t)){
 	res$t[i]=v_t[i]		
 	res$IICR[i]=IICR.pan.varN(res$t[i],hres$a,hres$lambda)
 }
-# plots in natural scale for t <= 10
-p=ggplot(res%>%filter(t<=10),aes(x=t,y=IICR))+geom_line()+theme_bw()+ylim(0,5)
-ggsave('Figure3_IICR_elyashiv.jpg',plot = p, width = 4, height = 4)
+
 # plots in log scale scale for t <= 10
-p=ggplot(res%>%filter(t<=10),aes(x=t,y=IICR))+geom_line()+theme_bw()+scale_x_log10()+ylim(0,5)
-ggsave('Figure3_IICR_elyashiv_log.jpg',plot = p, width = 4, height = 4)
-# plots in natural scale for all t
-p=ggplot(res,aes(x=t,y=IICR))+geom_line()+theme_bw()+ylim(0,5)
-ggsave('Figure3_IICR_elyashiv_nozoom.jpg',plot = p, width = 4, height = 4)
+res = res %>% mutate(curve='Recent IICR')
+p2=ggplot(res%>%filter(t<=10),aes(x=t,y=IICR))+geom_line()+theme_bw()+scale_x_log10()+ylim(0,5)+facet_grid(~curve)+theme(strip.text.x = element_text(size=12))
 # plots in log scale for all t
-p=ggplot(res,aes(x=t,y=IICR))+geom_line()+theme_bw()+scale_x_log10()+ylim(0,5)
-ggsave('Figure3_IICR_elyashiv_nozoom_log.jpg',plot = p, width = 4, height = 4)
+res = res %>% mutate(curve='Full IICR') %>% mutate(scenario='Elyashiv et al (2016), Drosophila')
+p3=ggplot(res,aes(x=t,y=IICR))+geom_line()+theme_bw()+scale_x_log10()+ylim(0,5)+facet_grid(scenario~curve)+theme(strip.text.y = element_text(size=12),strip.text.x = element_text(size=12))
 
 # similar plots after removing the 'mode' in 0
 ind=which(u[,2]>=0.25)
 u[ind,2]=u[ind,2]/mean(u[ind,2])
-p=ggplot(u[ind,],aes(x=V2))+geom_line(stat="density")+theme_bw()+xlab(TeX("$\\lambda$"))+xlim(0,5)+ylim(0,1)
-ggsave('Figure3_distrib_elyashiv_no0mode.jpg',plot = p, width = 4, height = 4)
+p10=ggplot(u[ind,],aes(x=V2))+geom_line(stat="density")+theme_bw()+xlab(TeX("$\\lambda$"))+xlim(0,5)+ylim(0,1)+facet_grid(~curve)+theme(strip.text.x = element_text(size=12))
 h=hist(u[ind,2],breaks=25)
 hres=cbind(h$mid,h$counts/sum(h$counts))
 colnames(hres)=c('lambda','a')
@@ -163,10 +156,13 @@ for (i in 1:length(v_t)){
 	res$t[i]=v_t[i]		
 	res$IICR[i]=IICR.pan.varN(res$t[i],hres$a,hres$lambda)
 }
-p=ggplot(res%>%filter(t<=10),aes(x=t,y=IICR))+geom_line()+theme_bw()+scale_x_log10()+ylim(0,5)
-ggsave('Figure3_IICR_elyashiv_no0mode_log.jpg',plot = p, width = 4, height = 4)
-p=ggplot(res,aes(x=t,y=IICR))+geom_line()+theme_bw()+scale_x_log10()+ylim(0,5)
-ggsave('Figure3_IICR_elyashiv_no0mode_nozoom_log.jpg',plot = p, width = 4, height = 4)
+res = res %>% mutate(curve='Recent IICR')
+p11=ggplot(res%>%filter(t<=10),aes(x=t,y=IICR))+geom_line()+theme_bw()+scale_x_log10()+ylim(0,5)+facet_grid(~curve)+theme(strip.text.x = element_text(size=12))
+res = res %>% mutate(curve='Full IICR')
+p12=ggplot(res,aes(x=t,y=IICR))+geom_line()+theme_bw()+scale_x_log10()+ylim(0,5)+facet_grid(~curve)+theme(strip.text.x = element_text(size=12))
+# plot a column of figures
+p=grid.arrange(p10,p11,p12,ncol=3)
+ggsave('Figure3_elyashiv_nomode.pdf',plot = p, width = 12, height = 4)
 
 ## Figure 3 - K=25 classes defined Gossmann et al results
 
@@ -174,8 +170,7 @@ ggsave('Figure3_IICR_elyashiv_no0mode_nozoom_log.jpg',plot = p, width = 4, heigh
 x=seq(from=0,to=5,by=0.1)
 d_th=dlnorm(x,-(0.743**2)/2,0.743)
 res=data.frame(cbind(x,d_th))
-p=ggplot(res,aes(x=x,y=d_th))+geom_line()+theme_bw()+xlab(TeX("$\\lambda$"))+ylab('density')+ylim(0,1)+xlim(0,5)
-ggsave('Figure3_distrib_gossmann_droso.jpg',plot = p, width = 4, height = 4)
+p4=ggplot(res,aes(x=x,y=d_th))+geom_line()+theme_bw()+xlab(TeX("$\\lambda$"))+ylab('density')+ylim(0,1)+xlim(0,5)
 # simulate lambda values and breaks into 25 classes of lambda
 obs=rlnorm(100000,-(0.743**2)/2,0.743)
 h=hist(obs[which(obs<=5)],nclass=25)
@@ -191,24 +186,18 @@ for (i in 1:length(v_t)){
 	res$t[i]=v_t[i]		
 	res$IICR[i]=IICR.pan.varN(res$t[i],hres$a,hres$lambda)
 }
-# plots in natural scale for t <= 10
-p=ggplot(res%>%filter(t<=10),aes(x=t,y=IICR))+geom_line()+theme_bw()+ylim(0,5)
-ggsave('Figure3_IICR_gossmann_droso.jpg',plot = p, width = 4, height = 4)
+
 # plots in log scale for t <= 10
-p=ggplot(res%>%filter(t<=10),aes(x=t,y=IICR))+geom_line()+theme_bw()+ scale_x_log10()+ylim(0,5)
-ggsave('Figure3_IICR_gossmann_droso_log.jpg',plot = p, width = 4, height = 4)
-# plots in natural scale for all t
-p=ggplot(res,aes(x=t,y=IICR))+geom_line()+theme_bw()+ylim(0,5)
-ggsave('Figure3_IICR_gossmann_droso_nozoom.jpg',plot = p, width = 4, height = 4)
+res = res %>% mutate(scenario='Gossmann et al (2011), Drosophila')
+p5=ggplot(res%>%filter(t<=10),aes(x=t,y=IICR))+geom_line()+theme_bw()+ scale_x_log10()+ylim(0,5)
 # plots in log scale for all t
-p=ggplot(res,aes(x=t,y=IICR))+geom_line()+theme_bw() + scale_x_log10()+ylim(0,5)
-ggsave('Figure3_IICR_gossmann_droso_nozoom_log.jpg',plot = p, width = 4, height = 4)
+p6=ggplot(res,aes(x=t,y=IICR))+geom_line()+theme_bw() + scale_x_log10()+ylim(0,5)+facet_grid(scenario~.)+theme(strip.text.y = element_text(size=12))
+
 # similar plots but for humans
 x=seq(from=0,to=5,by=0.1)
 d_th=dlnorm(x,-(0.682**2)/2,0.682)
 res=data.frame(cbind(x,d_th))
-p=ggplot(res,aes(x=x,y=d_th))+geom_line()+theme_bw()+xlab(TeX("$\\lambda$"))+ylab('density')+ylim(0,1)+xlim(0,5)
-ggsave('Figure3_distrib_gossmann_humans.jpg',plot = p, width = 4, height = 4)
+p7=ggplot(res,aes(x=x,y=d_th))+geom_line()+theme_bw()+xlab(TeX("$\\lambda$"))+ylab('density')+ylim(0,1)+xlim(0,5)
 obs=rlnorm(100000,-(0.682**2)/2,0.682)
 h=hist(obs[which(obs<=5)],nclass=25)
 hres=cbind(h$mid,h$counts/sum(h$counts))
@@ -222,13 +211,25 @@ for (i in 1:length(v_t)){
 	res$t[i]=v_t[i]		
 	res$IICR[i]=IICR.pan.varN(res$t[i],hres$a,hres$lambda)
 }
-p=ggplot(res%>%filter(t<=10),aes(x=t,y=IICR))+geom_line()+theme_bw()+ylim(0,5)
-ggsave('Figure3_IICR_gossmann_humans.jpg',plot = p, width = 4, height = 4)
-p=ggplot(res%>%filter(t<=10),aes(x=t,y=IICR))+geom_line()+theme_bw()+ scale_x_log10()+ylim(0,5)
-ggsave('Figure3_IICR_gossmann_humans_log.jpg',plot = p, width = 4, height = 4)
-p=ggplot(res,aes(x=t,y=IICR))+geom_line()+theme_bw()+ylim(0,5)
-ggsave('Figure3_IICR_gossmann_humans_nozoom.jpg',plot = p, width = 4, height = 4)
-p=ggplot(res,aes(x=t,y=IICR))+geom_line()+theme_bw() + scale_x_log10()+ylim(0,5)
-ggsave('Figure3_IICR_gossmann_humans_nozoom_log.jpg',plot = p, width = 4, height = 4)
+res = res %>% mutate(scenario='Gossmann et al (2011), humans')
+p8=ggplot(res%>%filter(t<=10),aes(x=t,y=IICR))+geom_line()+theme_bw()+ scale_x_log10()+ylim(0,5)
+p9=ggplot(res,aes(x=t,y=IICR))+geom_line()+theme_bw() + scale_x_log10()+ylim(0,5)+facet_grid(scenario~.)+theme(strip.text.y = element_text(size=12))
+
+# plot an array of figures
+p=grid.arrange(p1,p2,p3,p4,p5,p6,p7,p8,p9,ncol=3,widths=c(9,9,10),heights=c(10,9,9))
+ggsave('FigureS3.pdf',plot = p, width = 12, height = 12)
+
+## Variance of T2
+Vexp <- function (a,lambda) {
+	# a: proportion of each class
+	# lambda: Ne in each class
+	S1=sum(a*lambda)
+	S2=sum(a*lambda**2)
+	V=2*S2-S1**2
+	return(sqrt(V)/sum(a*lambda))
+}
+lambda=c(0.1,1)
+a=c(0.1,0.9)
+Vexp(a,lambda)
 
 

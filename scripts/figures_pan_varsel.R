@@ -1,9 +1,10 @@
 ## IICR with K classes along the genome, each following a panmictic model whose population size can vary according to a piecewise constant process. 
-## Used in Figure 6
-## IICR is computed analytically from Equation (4) in Boitard et al (under review), combined with standard derivations of the IICR under a panmictic model with piecewise constant population size.  
+## Used in Figures 3 & 6
+## IICR is computed analytically from Equation (5) in Boitard et al (2022), combined with standard derivations of the IICR under a panmictic model with piecewise constant population size.  
 
 library(tidyverse)
 library(latex2exp)
+library(gridExtra)
 
 # generic function to compute R (numerator of the IICR) in a given class
 coal.cum=function(t,tmodif,lambda){
@@ -47,6 +48,45 @@ for (i in 1:length(t)){
 	IICR[i]=coal.cum(t[i],tmodif,lambda)/coal.dens(t[i],tmodif,lambda)
 }
 plot(t,IICR)
+
+## Figure 3: IICR in a panmictic model with population size change and K=2
+lambda=c(0.1,1) # relative Ne in each class
+v_tmodif=c(0.1,0.5,1) # time where population size changes
+v_t=seq(from=0,to=10,by=0.01) # time vector (when the IICR will be computed)
+v_a2=c(0,0.01,0.1,0.5,0.9,0.99,1) # possible values for the proportion of class 2
+ g=5 
+# g=100
+n=length(v_a2)*length(v_t)*length(v_tmodif)
+# builds the table of IICR values
+res=data.frame(matrix(nrow=n,ncol=4))
+colnames(res)=c('a2','tmodif','t','IICR')
+i=1
+for (i_a2 in 1:length(v_a2)){
+	for (i_g in 1:length(v_tmodif)){
+		for (i_t in 1:length(v_t)){
+			res$a2[i]=v_a2[i_a2]
+			res$t[i]=v_t[i_t]
+			res$tmodif[i]=v_tmodif[i_g]
+			a=c(1-res$a2[i],res$a2[i]) # proportion of each class
+			R=rep(0,2)
+			dens=rep(0,2)
+			for (j in 1:2){
+				R[j]=coal.cum(v_t[i_t],v_tmodif[i_g],lambda[j]*c(g,1))
+				dens[j]=coal.dens(v_t[i_t],v_tmodif[i_g],lambda[j]*c(g,1))
+			}
+			res$IICR[i]=sum(a*R)/sum(a*dens)
+			i=i+1
+		}
+	}
+}
+# change panel names
+#tmodif.labs=paste(TeX("$t_1$"),"=",v_tmodif,sep='')
+tmodif.labs=paste0("T=",v_tmodif)
+names(tmodif.labs)=v_tmodif
+# plots in log scale
+p=ggplot(res,aes(x=t,y=IICR,color=as.factor(a2)))+geom_line()+theme_bw()+ylim(0,lambda[2]*g)+xlim(0,10)+scale_x_log10()+scale_color_discrete(name = TeX("$a_2$"))+facet_grid(~tmodif,labeller=labeller(tmodif=tmodif.labs))
+ggsave('Figure3.pdf',plot = p, width = 10, height = 4)
+#ggsave('FigureS5.pdf',plot = p, width = 10, height = 4) 
 
 ## Figure 6: selective sweep in a panmictic population - transient reduction of Ne around the selected site
 
@@ -123,7 +163,17 @@ res$IICR[ind]=res$IICR[ind]-0.01
 ind=which(res$alpha==10000)
 res$IICR[ind]=res$IICR[ind]-0.02
 # plots in log scale
-p=ggplot(res,aes(x=t,y=IICR,color=as.factor(alpha)))+geom_line()+theme_bw()+scale_x_continuous(limits=c(1000,100000),trans='log10')+scale_color_discrete(name = TeX("$\\alpha$"))+ylim(0,2)+xlab('generations')
-ggsave('Figure6.jpg',plot = p, width = 5, height = 4)
+p0=ggplot(res,aes(x=t,y=IICR,color=as.factor(alpha)))+geom_line()+theme_bw()+scale_x_continuous(limits=c(1000,100000),trans='log10')+scale_color_discrete(name = TeX("$\\alpha$"))+ylim(0,2)+xlab('generations')
+# combines with IICRs obtained from simulated coalescence times (under selection)
+source('iicr_selection_loop.R')
+gs=list(p0,p1,p2)
+lay=rbind(c(NA,1,1,NA),c(2,2,3,3))
+select_grobs <- function(lay) {
+	id <- unique(c(t(lay))) 
+  	id[!is.na(id)]
+} 
+p=grid.arrange(grobs=gs[select_grobs(lay)], layout_matrix=lay)
+ggsave('Figure6.pdf',plot = p, width = 10, height = 8)
+
 
 
